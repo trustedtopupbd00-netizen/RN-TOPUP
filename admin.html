@@ -1,0 +1,441 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RN TOPUP - Admin Dashboard</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style> 
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f3f4f6; overflow-x: hidden; } 
+        .sidebar-active { background-color: #1f2937; border-left: 4px solid #10b981; }
+        .sidebar-transition { transition: transform 0.3s ease-in-out; }
+        .toast-anim { animation: slideDown 0.3s ease-out forwards; }
+        @keyframes slideDown { from { transform: translateY(-20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+    </style>
+</head>
+<body class="bg-gray-100 h-screen overflow-hidden">
+
+    <!-- TOAST CONTAINER -->
+    <div id="toast-container" class="fixed top-5 left-1/2 transform -translate-x-1/2 z-[300] w-11/12 max-w-[400px] flex flex-col gap-2 pointer-events-none"></div>
+
+    <!-- Login Screen -->
+    <div id="login-screen" class="fixed inset-0 bg-gray-900 flex justify-center items-center z-[100] p-4">
+        <div class="bg-white p-6 md:p-8 rounded-2xl shadow-2xl w-full max-w-sm">
+            <div class="text-center mb-6">
+                <i class="fas fa-shield-alt text-5xl text-blue-600 mb-3"></i>
+                <h2 class="text-2xl font-bold text-gray-800">RN TOPUP Admin</h2>
+            </div>
+            <form id="login-form" onsubmit="handleLogin(event)">
+                <div class="relative mb-4">
+                    <input type="password" id="admin-pass" placeholder="Enter Password" required
+                           class="w-full border border-gray-300 p-3 rounded-lg focus:outline-none focus:border-blue-500 pr-10">
+                    <button type="button" onclick="togglePassword()" class="absolute right-3 top-3 text-gray-400 hover:text-gray-600">
+                        <i id="eye-icon" class="fas fa-eye"></i>
+                    </button>
+                </div>
+                <button type="submit" class="w-full bg-blue-600 text-white py-3 rounded-lg font-bold hover:bg-blue-700 transition">Login</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Admin Panel -->
+    <div id="admin-panel" class="flex w-full h-full relative hidden">
+        <div id="sidebar-overlay" onclick="toggleSidebar()" class="fixed inset-0 bg-black bg-opacity-50 z-20 hidden md:hidden"></div>
+
+        <aside id="sidebar" class="fixed md:relative w-64 h-full bg-gray-800 text-white flex flex-col shadow-xl z-30 sidebar-transition -translate-x-full md:translate-x-0">
+            <div class="p-5 text-xl font-bold border-b border-gray-700 flex justify-between items-center">
+                <div class="flex items-center gap-3"><i class="fas fa-cube text-green-500 text-2xl"></i> RN ADMIN</div>
+                <button onclick="toggleSidebar()" class="md:hidden text-gray-400 hover:text-white"><i class="fas fa-times text-xl"></i></button>
+            </div>
+            <nav class="flex-1 p-4 space-y-1 overflow-y-auto">
+                <button onclick="switchTab('dashboard')" class="w-full text-left py-3 px-4 rounded-lg hover:bg-gray-700 transition tab-btn sidebar-active" data-tab="dashboard"><i class="fas fa-tachometer-alt w-6"></i> Dashboard</button>
+                <button onclick="switchTab('users')" class="w-full text-left py-3 px-4 rounded-lg hover:bg-gray-700 transition tab-btn" data-tab="users"><i class="fas fa-users w-6"></i> Manage Users</button>
+                <button onclick="switchTab('deposits')" class="w-full text-left py-3 px-4 rounded-lg hover:bg-gray-700 transition tab-btn" data-tab="deposits"><i class="fas fa-money-bill-wave w-6"></i> Deposits</button>
+                <button onclick="switchTab('orders')" class="w-full text-left py-3 px-4 rounded-lg hover:bg-gray-700 transition tab-btn" data-tab="orders"><i class="fas fa-shopping-cart w-6"></i> Orders</button>
+                <button onclick="switchTab('categories')" class="w-full text-left py-3 px-4 rounded-lg hover:bg-gray-700 transition tab-btn" data-tab="categories"><i class="fas fa-tags w-6"></i> Categories</button>
+                <button onclick="switchTab('products')" class="w-full text-left py-3 px-4 rounded-lg hover:bg-gray-700 transition tab-btn" data-tab="products"><i class="fas fa-box w-6"></i> Products</button>
+                <button onclick="switchTab('settings')" class="w-full text-left py-3 px-4 rounded-lg hover:bg-gray-700 transition tab-btn" data-tab="settings"><i class="fas fa-money-check-alt w-6"></i> Payment Settings</button>
+            </nav>
+            <div class="p-4 border-t border-gray-700">
+                <button onclick="logout()" class="w-full bg-red-500 py-2 rounded-lg hover:bg-red-600 transition font-semibold"><i class="fas fa-sign-out-alt"></i> Logout</button>
+            </div>
+        </aside>
+
+        <div class="flex-1 flex flex-col h-full overflow-hidden w-full">
+            <header class="bg-white shadow-sm p-4 flex justify-between items-center z-10">
+                <div class="flex items-center gap-3">
+                    <button onclick="toggleSidebar()" class="md:hidden text-gray-600 text-xl focus:outline-none"><i class="fas fa-bars"></i></button>
+                    <h1 class="text-xl md:text-2xl font-bold text-gray-800 truncate" id="page-title">Dashboard</h1>
+                </div>
+                <div class="flex items-center gap-2">
+                    <div class="w-8 h-8 bg-gradient-to-r from-blue-500 to-green-500 rounded-full flex items-center justify-center text-white font-bold text-sm">A</div>
+                </div>
+            </header>
+
+            <div class="flex-1 overflow-y-auto p-4 md:p-6 bg-gray-50">
+                <div id="tab-dashboard" class="tab-content">
+                    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+                        <div class="bg-white rounded-xl shadow-sm p-5 border-l-4 border-blue-500"><p class="text-xs text-gray-500 font-semibold mb-1">Total Sales</p><h3 class="text-xl font-bold text-gray-800" id="stat-sales">৳ 0</h3></div>
+                        <div class="bg-white rounded-xl shadow-sm p-5 border-l-4 border-green-500"><p class="text-xs text-gray-500 font-semibold mb-1">Total Users</p><h3 class="text-xl font-bold text-gray-800" id="stat-users">0</h3></div>
+                        <div class="bg-white rounded-xl shadow-sm p-5 border-l-4 border-yellow-500"><p class="text-xs text-gray-500 font-semibold mb-1">Pending Deposits</p><h3 class="text-xl font-bold text-gray-800" id="stat-deposits">0</h3></div>
+                        <div class="bg-white rounded-xl shadow-sm p-5 border-l-4 border-purple-500"><p class="text-xs text-gray-500 font-semibold mb-1">Total Orders</p><h3 class="text-xl font-bold text-gray-800" id="stat-orders">0</h3></div>
+                    </div>
+                </div>
+
+                <div id="tab-users" class="tab-content hidden">
+                    <div class="bg-white rounded-xl shadow-sm overflow-hidden">
+                        <div class="p-5 border-b border-gray-200 bg-gray-50"><h2 class="text-lg font-bold text-gray-800">Registered Users</h2></div>
+                        <div class="overflow-x-auto">
+                            <table class="w-full text-left border-collapse min-w-[700px]">
+                                <thead><tr class="bg-gray-100 text-gray-600 text-sm"><th class="p-4">Name</th><th class="p-4">Email</th><th class="p-4">Phone</th><th class="p-4">Balance</th><th class="p-4">Action</th></tr></thead>
+                                <tbody id="users-table-body" class="text-sm text-gray-700"></tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                <div id="tab-deposits" class="tab-content hidden">
+                    <div class="bg-white rounded-xl shadow-sm overflow-hidden">
+                        <div class="p-5 border-b border-gray-200 bg-gray-50"><h2 class="text-lg font-bold text-gray-800">Deposit Requests</h2></div>
+                        <div class="overflow-x-auto">
+                            <table class="w-full text-left border-collapse min-w-[800px]">
+                                <thead><tr class="bg-gray-100 text-gray-600 text-sm"><th class="p-4">User Email</th><th class="p-4">Amount</th><th class="p-4">Method</th><th class="p-4">Sender No.</th><th class="p-4">TrxID</th><th class="p-4">Status</th><th class="p-4">Action</th></tr></thead>
+                                <tbody id="deposits-table-body" class="text-sm text-gray-700"></tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                <div id="tab-orders" class="tab-content hidden">
+                    <div class="bg-white rounded-xl shadow-sm overflow-hidden">
+                        <div class="p-5 border-b border-gray-200 bg-gray-50"><h2 class="text-lg font-bold text-gray-800">Manage Orders</h2></div>
+                        <div class="overflow-x-auto">
+                            <table class="w-full text-left border-collapse min-w-[800px]">
+                                <thead><tr class="bg-gray-100 text-gray-600 text-sm"><th class="p-4">User Email</th><th class="p-4">Player ID</th><th class="p-4">Product</th><th class="p-4">Amount</th><th class="p-4">Status</th><th class="p-4">Action</th></tr></thead>
+                                <tbody id="orders-table-body" class="text-sm text-gray-700"></tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                <div id="tab-categories" class="tab-content hidden">
+                    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                        <div class="bg-white rounded-xl shadow-sm p-5 lg:col-span-1 h-fit">
+                            <h2 class="text-lg font-bold text-gray-800 mb-4">Create Category</h2>
+                            <form id="add-category-form" onsubmit="addCategory(event)">
+                                <input type="text" id="c-name" placeholder="Category Name" required class="w-full border p-2 rounded mb-4 focus:border-blue-500 focus:outline-none">
+                                <button type="submit" class="w-full bg-blue-600 text-white py-2 rounded font-bold hover:bg-blue-700 transition">Add Category</button>
+                            </form>
+                        </div>
+                        <div class="bg-white rounded-xl shadow-sm p-5 lg:col-span-2 overflow-x-auto">
+                            <table class="w-full text-left border-collapse min-w-[400px]">
+                                <thead><tr class="bg-gray-100 text-gray-600 text-sm"><th class="p-3">Name</th><th class="p-3">Action</th></tr></thead>
+                                <tbody id="categories-table-body" class="text-sm text-gray-700"></tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                <div id="tab-products" class="tab-content hidden">
+                    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                        <div class="bg-white rounded-xl shadow-sm p-5 lg:col-span-1 h-fit">
+                            <h2 class="text-lg font-bold text-gray-800 mb-4">Add Product</h2>
+                            <form id="add-product-form" onsubmit="addProduct(event)">
+                                <input type="text" id="p-name" placeholder="Product Name" required class="w-full border p-2 rounded mb-3 focus:border-blue-500 focus:outline-none">
+                                <input type="number" id="p-price" placeholder="Price (৳)" required class="w-full border p-2 rounded mb-3 focus:border-blue-500 focus:outline-none">
+                                <select id="p-category" required class="w-full border p-2 rounded mb-3 focus:border-blue-500 focus:outline-none"></select>
+                                <input type="url" id="p-image" placeholder="Image URL" required class="w-full border p-2 rounded mb-4 focus:border-blue-500 focus:outline-none">
+                                <button type="submit" class="w-full bg-green-500 text-white py-2 rounded font-bold hover:bg-green-600 transition">Add Product</button>
+                            </form>
+                        </div>
+                        <div class="bg-white rounded-xl shadow-sm p-5 lg:col-span-2 overflow-x-auto">
+                            <table class="w-full text-left border-collapse min-w-[500px]">
+                                <thead><tr class="bg-gray-100 text-gray-600 text-sm"><th class="p-3">Image</th><th class="p-3">Name</th><th class="p-3">Price</th><th class="p-3">Category</th><th class="p-3">Action</th></tr></thead>
+                                <tbody id="products-table-body" class="text-sm text-gray-700"></tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                <div id="tab-settings" class="tab-content hidden">
+                    <div class="bg-white rounded-xl shadow-sm p-6 max-w-3xl">
+                        <h2 class="text-lg font-bold text-gray-800 mb-4">Payment & Site Settings</h2>
+                        <form id="settings-form" onsubmit="saveSettings(event)">
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                                <div><label class="block text-sm font-semibold mb-1">bKash Number (Personal)</label><input type="text" id="s-bkash" class="w-full border p-2 rounded focus:border-blue-500" placeholder="01XXXXXXXXX"></div>
+                                <div><label class="block text-sm font-semibold mb-1">Nagad Number (Personal)</label><input type="text" id="s-nagad" class="w-full border p-2 rounded focus:border-blue-500" placeholder="01XXXXXXXXX"></div>
+                                <div><label class="block text-sm font-semibold mb-1">Telegram Link</label><input type="url" id="s-telegram" class="w-full border p-2 rounded focus:border-blue-500" placeholder="https://t.me/..."></div>
+                                <div><label class="block text-sm font-semibold mb-1">WhatsApp Link</label><input type="url" id="s-whatsapp" class="w-full border p-2 rounded focus:border-blue-500" placeholder="https://wa.me/..."></div>
+                            </div>
+                            <button type="submit" class="bg-blue-600 text-white px-8 py-3 rounded-lg font-bold hover:bg-blue-700 transition">Save Settings</button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+        import { getDatabase, ref, push, set, onValue, update, remove } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyCkV8QUItozNBYNnlHJ4GFNAhhEnZ6FqJ8",
+            authDomain: "rn-top-up-e248f.firebaseapp.com",
+            databaseURL: "https://rn-top-up-e248f-default-rtdb.firebaseio.com",
+            projectId: "rn-top-up-e248f",
+            storageBucket: "rn-top-up-e248f.firebasestorage.app",
+            messagingSenderId: "844967673226",
+            appId: "1:844967673226:web:fd04fbd9d4def03f929c73"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const db = getDatabase(app);
+
+        // ================= MODERN TOAST SYSTEM =================
+        window.showToast = function(message, type = 'error') {
+            const container = document.getElementById('toast-container');
+            const toast = document.createElement('div');
+            const bgColor = type === 'success' ? 'bg-green-500' : (type === 'error' ? 'bg-red-500' : 'bg-blue-500');
+            const icon = type === 'success' ? 'fa-check-circle' : (type === 'error' ? 'fa-exclamation-circle' : 'fa-info-circle');
+            toast.className = `${bgColor} text-white p-4 rounded-xl shadow-2xl flex items-center gap-3 toast-anim pointer-events-auto`;
+            toast.innerHTML = `<i class="fas ${icon} text-xl"></i> <span class="text-sm font-semibold flex-1">${message}</span>`;
+            container.appendChild(toast);
+            setTimeout(() => {
+                toast.style.opacity = '0';
+                toast.style.transform = 'translateY(-20px)';
+                setTimeout(() => toast.remove(), 300);
+            }, 4000);
+        };
+
+        window.handleLogin = function(e) {
+            e.preventDefault();
+            if (document.getElementById('admin-pass').value.trim() === 'admin123') {
+                document.getElementById('login-screen').classList.add('hidden');
+                document.getElementById('admin-panel').classList.remove('hidden');
+                loadDashboard(); loadCategoriesDropdown();
+                window.showToast('স্বাগতম অ্যাডমিন!', 'success');
+            } else { window.showToast('ভুল পাসওয়ার্ড!', 'error'); document.getElementById('admin-pass').value = ''; }
+        };
+
+        window.togglePassword = function() {
+            const passInput = document.getElementById('admin-pass');
+            const icon = document.getElementById('eye-icon');
+            if (passInput.type === 'password') { passInput.type = 'text'; icon.classList.replace('fa-eye', 'fa-eye-slash'); } 
+            else { passInput.type = 'password'; icon.classList.replace('fa-eye-slash', 'fa-eye'); }
+        };
+
+        window.logout = function() { location.reload(); };
+        window.toggleSidebar = function() {
+            const sidebar = document.getElementById('sidebar'), overlay = document.getElementById('sidebar-overlay');
+            sidebar.classList.toggle('-translate-x-full'); overlay.classList.toggle('hidden');
+        };
+
+        window.switchTab = function(tabId) {
+            document.querySelectorAll('.tab-content').forEach(el => el.classList.add('hidden'));
+            document.getElementById(`tab-${tabId}`).classList.remove('hidden');
+            document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('sidebar-active'));
+            document.querySelector(`.tab-btn[data-tab="${tabId}"]`).classList.add('sidebar-active');
+            document.getElementById('page-title').innerText = tabId.charAt(0).toUpperCase() + tabId.slice(1);
+            if (window.innerWidth < 768) toggleSidebar();
+            
+            if (tabId === 'dashboard') loadDashboard();
+            if (tabId === 'users') loadUsers();
+            if (tabId === 'deposits') loadDeposits();
+            if (tabId === 'orders') loadOrders();
+            if (tabId === 'categories') loadCategories();
+            if (tabId === 'products') loadProducts();
+            if (tabId === 'settings') loadSettings();
+        };
+
+        function loadDashboard() {
+            onValue(ref(db, 'orders'), (snapshot) => {
+                const orders = snapshot.val() || {};
+                let totalSales = 0;
+                Object.values(orders).forEach(o => { if(o.status === 'Completed') totalSales += o.amount; });
+                document.getElementById('stat-sales').innerText = `৳ ${totalSales}`;
+                document.getElementById('stat-orders').innerText = Object.keys(orders).length;
+            });
+            onValue(ref(db, 'users'), (snapshot) => {
+                document.getElementById('stat-users').innerText = snapshot.exists() ? Object.keys(snapshot.val()).length : 0;
+            });
+            onValue(ref(db, 'deposits'), (snapshot) => {
+                const deposits = snapshot.val() || {};
+                document.getElementById('stat-deposits').innerText = Object.values(deposits).filter(d => d.status === 'Pending').length;
+            });
+        }
+
+        function loadUsers() {
+            onValue(ref(db, 'users'), (snapshot) => {
+                const users = snapshot.val() || {};
+                const tbody = document.getElementById('users-table-body'); tbody.innerHTML = '';
+                if(Object.keys(users).length === 0) return tbody.innerHTML = '<tr><td colspan="5" class="text-center p-4 text-gray-500">No users found</td></tr>';
+                Object.keys(users).forEach(uid => {
+                    const u = users[uid];
+                    tbody.innerHTML += `<tr class="border-b hover:bg-gray-50"><td class="p-4 font-semibold">${u.name || 'N/A'}</td><td class="p-4 text-xs">${u.email || 'N/A'}</td><td class="p-4">${u.phone || 'N/A'}</td><td class="p-4 font-bold text-green-600">৳${u.balance || 0}</td><td class="p-4"><button onclick="addUserBalance('${uid}')" class="bg-blue-500 text-white px-2 py-1 rounded text-xs"><i class="fas fa-plus"></i> Add Balance</button></td></tr>`;
+                });
+            });
+        }
+
+        window.addUserBalance = function(uid) {
+            const amount = prompt("Enter amount to add to user's wallet:");
+            if(amount && !isNaN(amount)) {
+                const userRef = ref(db, `users/${uid}`);
+                onValue(userRef, (snapshot) => {
+                    const user = snapshot.val();
+                    update(userRef, { balance: parseFloat(user.balance || 0) + parseFloat(amount) })
+                    .then(() => window.showToast('ব্যালেন্স যোগ করা হয়েছে!', 'success'))
+                    .catch(err => window.showToast('Error: ' + err.message, 'error'));
+                }, { onlyOnce: true });
+            }
+        };
+
+        function loadDeposits() {
+            onValue(ref(db, 'deposits'), (snapshot) => {
+                const deposits = snapshot.val() || {};
+                const tbody = document.getElementById('deposits-table-body'); tbody.innerHTML = '';
+                if(Object.keys(deposits).length === 0) return tbody.innerHTML = '<tr><td colspan="7" class="text-center p-4 text-gray-500">No deposits found</td></tr>';
+                
+                Object.keys(deposits).reverse().forEach(key => {
+                    const d = deposits[key];
+                    let statusColor = d.status === 'Approved' ? 'green' : (d.status === 'Pending' ? 'yellow' : 'red');
+                    let action = d.status === 'Pending' ? `<button onclick="approveDeposit('${key}')" class="bg-green-500 text-white px-2 py-1 rounded text-xs mr-1">Approve</button><button onclick="rejectDeposit('${key}')" class="bg-red-500 text-white px-2 py-1 rounded text-xs">Reject</button>` : `<span class="text-gray-400 text-xs">Done</span>`;
+                    tbody.innerHTML += `<tr class="border-b hover:bg-gray-50"><td class="p-4 text-xs">${d.userEmail}</td><td class="p-4 font-bold text-green-600">৳${d.amount}</td><td class="p-4">${d.method}</td><td class="p-4">${d.senderNumber}</td><td class="p-4">${d.trxId}</td><td class="p-4"><span class="bg-${statusColor}-100 text-${statusColor}-700 px-2 py-1 rounded-full text-xs font-semibold">${d.status}</span></td><td class="p-4">${action}</td></tr>`;
+                });
+            });
+        }
+
+        window.approveDeposit = function(depositId) {
+            const depositRef = ref(db, `deposits/${depositId}`);
+            onValue(depositRef, (snapshot) => {
+                const deposit = snapshot.val();
+                if(deposit.status !== 'Pending') return;
+                
+                const userRef = ref(db, `users/${deposit.userId}`);
+                onValue(userRef, (userSnapshot) => {
+                    if(userSnapshot.exists()) {
+                        const currentBalance = parseFloat(userSnapshot.val().balance) || 0;
+                        update(userRef, { balance: currentBalance + parseFloat(deposit.amount) })
+                        .then(() => {
+                            update(depositRef, { status: 'Approved' });
+                            window.showToast('ডিপোজিট অনুমোদিত এবং ব্যালেন্স যোগ হয়েছে!', 'success');
+                        });
+                    } else {
+                        window.showToast('ইউজার পাওয়া যায়নি!', 'error');
+                    }
+                }, { onlyOnce: true });
+            }, { onlyOnce: true });
+        };
+
+        window.rejectDeposit = function(depositId) {
+            if(confirm('Reject this deposit?')) {
+                update(ref(db, `deposits/${depositId}`), { status: 'Rejected' })
+                .then(() => window.showToast('ডিপোজিট বাতিল করা হয়েছে!', 'info'));
+            }
+        };
+
+        function loadOrders() {
+            onValue(ref(db, 'orders'), (snapshot) => {
+                const orders = snapshot.val() || {};
+                const tbody = document.getElementById('orders-table-body'); tbody.innerHTML = '';
+                if(Object.keys(orders).length === 0) return tbody.innerHTML = '<tr><td colspan="6" class="text-center p-4 text-gray-500">No orders found</td></tr>';
+                
+                Object.keys(orders).reverse().forEach(key => {
+                    const o = orders[key];
+                    let statusColor = o.status === 'Completed' ? 'green' : (o.status === 'Pending' ? 'yellow' : 'red');
+                    tbody.innerHTML += `<tr class="border-b hover:bg-gray-50"><td class="p-4 text-xs">${o.userEmail}</td><td class="p-4 font-semibold">${o.playerId}</td><td class="p-4">${o.productName}</td><td class="p-4 font-bold text-green-600">৳${o.amount}</td><td class="p-4"><span class="bg-${statusColor}-100 text-${statusColor}-700 px-2 py-1 rounded-full text-xs font-semibold">${o.status}</span></td><td class="p-4"><select onchange="updateOrderStatus('${key}', this.value)" class="border rounded p-1 text-xs"><option value="Pending" ${o.status === 'Pending' ? 'selected' : ''}>Pending</option><option value="Completed" ${o.status === 'Completed' ? 'selected' : ''}>Completed</option><option value="Cancelled" ${o.status === 'Cancelled' ? 'selected' : ''}>Cancelled</option></select></td></tr>`;
+                });
+            });
+        }
+
+        window.updateOrderStatus = function(orderId, newStatus) {
+            update(ref(db, `orders/${orderId}`), { status: newStatus })
+            .then(() => window.showToast(`অর্ডার স্ট্যাটাস: ${newStatus}`, 'success'));
+        };
+
+        function loadCategories() {
+            onValue(ref(db, 'categories'), (snapshot) => {
+                const categories = snapshot.val() || {};
+                const tbody = document.getElementById('categories-table-body'); tbody.innerHTML = '';
+                Object.keys(categories).forEach(key => {
+                    tbody.innerHTML += `<tr class="border-b hover:bg-gray-50"><td class="p-3">${categories[key].name}</td><td class="p-3"><button onclick="deleteCategory('${key}')" class="text-red-500 bg-red-50 px-2 py-1 rounded text-xs"><i class="fas fa-trash"></i></button></td></tr>`;
+                });
+                loadCategoriesDropdown(categories);
+            });
+        }
+
+        window.addCategory = function(e) {
+            e.preventDefault();
+            const name = document.getElementById('c-name').value;
+            push(ref(db, 'categories'), { name: name })
+            .then(() => { document.getElementById('add-category-form').reset(); window.showToast('ক্যাটাগরি যোগ করা হয়েছে!', 'success'); });
+        };
+
+        window.deleteCategory = function(id) {
+            if(confirm('Delete category?')) remove(ref(db, `categories/${id}`)).then(() => window.showToast('ক্যাটাগরি মুছে ফেলা হয়েছে!', 'info'));
+        };
+
+        function loadCategoriesDropdown(categories = null) {
+            const select = document.getElementById('p-category');
+            select.innerHTML = '';
+            if(categories) {
+                Object.values(categories).forEach(c => select.innerHTML += `<option value="${c.name}">${c.name}</option>`);
+            } else {
+                onValue(ref(db, 'categories'), (snapshot) => {
+                    const data = snapshot.val() || {};
+                    Object.values(data).forEach(c => select.innerHTML += `<option value="${c.name}">${c.name}</option>`);
+                }, { onlyOnce: true });
+            }
+        }
+
+        function loadProducts() {
+            onValue(ref(db, 'products'), (snapshot) => {
+                const products = snapshot.val() || {};
+                const tbody = document.getElementById('products-table-body'); tbody.innerHTML = '';
+                Object.keys(products).forEach(key => {
+                    const p = products[key];
+                    tbody.innerHTML += `<tr class="border-b hover:bg-gray-50"><td class="p-3"><img src="${p.image}" class="w-10 h-10 object-cover rounded"></td><td class="p-3 font-semibold">${p.name}</td><td class="p-3 text-green-600 font-bold">৳${p.price}</td><td class="p-3"><span class="bg-blue-100 text-blue-700 px-2 py-1 rounded text-xs">${p.category}</span></td><td class="p-3"><button onclick="deleteProduct('${key}')" class="text-red-500 bg-red-50 px-2 py-1 rounded text-xs"><i class="fas fa-trash"></i></button></td></tr>`;
+                });
+            });
+        }
+
+        window.addProduct = function(e) {
+            e.preventDefault();
+            const product = {
+                name: document.getElementById('p-name').value,
+                price: parseFloat(document.getElementById('p-price').value),
+                category: document.getElementById('p-category').value,
+                image: document.getElementById('p-image').value
+            };
+            push(ref(db, 'products'), product)
+            .then(() => { document.getElementById('add-product-form').reset(); window.showToast('প্রোডাক্ট যোগ করা হয়েছে!', 'success'); });
+        };
+
+        window.deleteProduct = function(id) {
+            if(confirm('Delete product?')) remove(ref(db, `products/${id}`)).then(() => window.showToast('প্রোডাক্ট মুছে ফেলা হয়েছে!', 'info'));
+        };
+
+        function loadSettings() {
+            onValue(ref(db, 'settings'), (snapshot) => {
+                const s = snapshot.val() || {};
+                document.getElementById('s-bkash').value = s.bkash || '';
+                document.getElementById('s-nagad').value = s.nagad || '';
+                document.getElementById('s-telegram').value = s.telegram || '';
+                document.getElementById('s-whatsapp').value = s.whatsapp || '';
+            }, { onlyOnce: true });
+        }
+
+        window.saveSettings = function(e) {
+            e.preventDefault();
+            const s = {
+                bkash: document.getElementById('s-bkash').value,
+                nagad: document.getElementById('s-nagad').value,
+                telegram: document.getElementById('s-telegram').value,
+                whatsapp: document.getElementById('s-whatsapp').value
+            };
+            set(ref(db, 'settings'), s).then(() => window.showToast('সেটিংস সেভ হয়েছে!', 'success'));
+        };
+    </script>
+</body>
+</html>

@@ -1,0 +1,476 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>RN TOPUP - App</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #e5e7eb; }
+        .app-container { max-width: 480px; margin: 0 auto; background: #f8fafc; min-height: 100vh; position: relative; padding-bottom: 80px; box-shadow: 0 0 20px rgba(0,0,0,0.1); }
+        .card-gradient { background: linear-gradient(135deg, #1e1b4b, #312e81); }
+        .nav-active { color: #16a34a; } .nav-inactive { color: #9ca3af; } .hide { display: none !important; }
+        .bkash-theme { background: linear-gradient(135deg, #e2136e, #b30d55); }
+        .toast-anim { animation: slideDown 0.3s ease-out forwards; }
+        @keyframes slideDown { from { transform: translateY(-20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+    </style>
+</head>
+<body>
+
+<!-- TOAST CONTAINER -->
+<div id="toast-container" class="fixed top-5 left-1/2 transform -translate-x-1/2 z-[300] w-11/12 max-w-[400px] flex flex-col gap-2 pointer-events-none"></div>
+
+<div class="app-container">
+    
+    <!-- AUTH SCREEN -->
+    <div id="auth-screen" class="fixed inset-0 bg-white z-[200] flex flex-col justify-center p-6 max-w-[480px] mx-auto overflow-y-auto">
+        <div class="text-center mb-6">
+            <div class="w-16 h-16 bg-green-500 rounded-2xl flex items-center justify-center text-white text-3xl font-bold mx-auto mb-3 shadow-lg">RN</div>
+            <h1 class="text-2xl font-bold text-gray-800">Welcome to RN TOPUP</h1>
+            <p class="text-sm text-gray-500 mt-1">Login or Register to continue</p>
+        </div>
+
+        <div id="login-form-container">
+            <input type="email" id="login-email" placeholder="Email Address" class="w-full border p-3 rounded-lg mb-3 focus:border-green-500 focus:outline-none bg-gray-50">
+            <input type="password" id="login-pass" placeholder="Password" class="w-full border p-3 rounded-lg mb-4 focus:border-green-500 focus:outline-none bg-gray-50">
+            <button type="button" id="btn-login" class="w-full bg-green-500 text-white py-3 rounded-lg font-bold hover:bg-green-600 transition shadow-lg mb-3">Login</button>
+            
+            <div class="relative flex py-2 items-center mb-3">
+                <div class="flex-grow border-t border-gray-300"></div>
+                <span class="flex-shrink mx-4 text-gray-400 text-sm">OR</span>
+                <div class="flex-grow border-t border-gray-300"></div>
+            </div>
+            <button type="button" id="btn-google-login" class="w-full bg-white border border-gray-300 text-gray-700 py-3 rounded-lg font-bold hover:bg-gray-50 transition shadow-sm mb-4 flex items-center justify-center gap-2">
+                <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" class="w-5 h-5" alt="Google"> Continue with Google
+            </button>
+            
+            <p class="text-center text-sm text-gray-600">Don't have an account? <button type="button" id="btn-show-register" class="text-green-600 font-bold hover:underline">Register</button></p>
+        </div>
+
+        <div id="register-form-container" class="hide">
+            <input type="text" id="reg-name" placeholder="Full Name" class="w-full border p-3 rounded-lg mb-3 focus:border-green-500 focus:outline-none bg-gray-50">
+            <input type="email" id="reg-email" placeholder="Email Address" class="w-full border p-3 rounded-lg mb-3 focus:border-green-500 focus:outline-none bg-gray-50">
+            <input type="text" id="reg-phone" placeholder="Phone Number (e.g. 017XXXXXXX)" class="w-full border p-3 rounded-lg mb-3 focus:border-green-500 focus:outline-none bg-gray-50">
+            <input type="password" id="reg-pass" placeholder="Password (Min 6 characters)" class="w-full border p-3 rounded-lg mb-4 focus:border-green-500 focus:outline-none bg-gray-50">
+            <button type="button" id="btn-register" class="w-full bg-blue-600 text-white py-3 rounded-lg font-bold hover:bg-blue-700 transition shadow-lg mb-3">Register</button>
+            <p class="text-center text-sm text-gray-600">Already have an account? <button type="button" id="btn-show-login" class="text-blue-600 font-bold hover:underline">Login</button></p>
+        </div>
+    </div>
+
+    <!-- MAIN APP -->
+    <div id="main-app" class="hide">
+        <header class="bg-white p-4 flex justify-between items-center sticky top-0 z-50 shadow-sm">
+            <div class="flex items-center gap-2"><h1 class="text-xl font-bold text-gray-800">RN TOPUP</h1></div>
+            <div class="flex items-center gap-3">
+                <div class="bg-green-100 text-green-700 px-3 py-1 rounded-full text-sm font-semibold"><i class="fas fa-wallet"></i> <span id="header-balance">0</span>৳</div>
+                <div id="header-avatar" class="w-8 h-8 bg-teal-500 rounded-full flex items-center justify-center text-white font-bold text-sm">U</div>
+            </div>
+        </header>
+
+        <main id="home-page" class="p-4">
+            <div class="grid grid-cols-2 gap-3 mb-6">
+                <a id="telegram-link" href="#" target="_blank" class="bg-green-500 text-white py-2 rounded-lg text-sm font-semibold flex items-center justify-center gap-2"><i class="fab fa-telegram"></i> Join Group</a>
+                <a id="whatsapp-link" href="#" target="_blank" class="bg-green-500 text-white py-2 rounded-lg text-sm font-semibold flex items-center justify-center gap-2"><i class="fab fa-whatsapp"></i> WhatsApp</a>
+            </div>
+            <div id="dynamic-products-container"></div>
+        </main>
+
+        <main id="orders-page" class="p-4 hide">
+            <h2 class="text-xl font-bold text-gray-800 mb-4">My Orders</h2>
+            <div id="my-orders-list"></div>
+        </main>
+
+        <main id="add-money-page" class="p-4 hide">
+            <h2 class="text-xl font-bold text-gray-800 mb-4">Add Money</h2>
+            <div class="bg-white p-4 rounded-xl shadow-sm mb-4">
+                <label class="block text-sm font-semibold text-gray-700 mb-1">Enter Amount</label>
+                <input type="number" id="add-amount-input" placeholder="Amount (e.g. 100)" class="w-full border border-gray-300 rounded-lg p-3 mb-3 focus:outline-none focus:border-green-500">
+                <label class="block text-sm font-semibold text-gray-700 mb-1">Payment Method</label>
+                <select id="payment-method" class="w-full border border-gray-300 rounded-lg p-3 mb-3 focus:outline-none focus:border-green-500">
+                    <option value="bKash">bKash (Personal)</option>
+                    <option value="Nagad">Nagad (Personal)</option>
+                </select>
+                <div class="bg-blue-50 border border-blue-200 p-3 rounded-lg mb-3 text-sm text-blue-800">
+                    <p class="font-bold mb-1">Send Money Instructions:</p>
+                    <p>Send money to: <strong id="deposit-number">Loading...</strong> (Personal)</p>
+                </div>
+                <input type="text" id="sender-number" placeholder="Your Sender Number" class="w-full border border-gray-300 rounded-lg p-3 mb-3 focus:outline-none focus:border-green-500">
+                <input type="text" id="trx-id" placeholder="Transaction ID (TrxID)" class="w-full border border-gray-300 rounded-lg p-3 mb-4 focus:outline-none focus:border-green-500">
+                <button onclick="submitDeposit()" class="w-full bg-green-500 text-white py-3 rounded-lg font-bold hover:bg-green-600 transition">Submit Deposit Request</button>
+            </div>
+        </main>
+
+        <main id="account-page" class="p-4 hide">
+            <div class="bg-white rounded-xl shadow-sm p-4 text-center mb-4">
+                <div id="account-avatar" class="w-20 h-20 bg-teal-500 rounded-full mx-auto flex items-center justify-center text-white text-3xl font-bold mb-3 border-4 border-white shadow-lg">U</div>
+                <h2 class="text-xl font-bold text-gray-800" id="account-name">User Name</h2>
+                <p class="text-xs text-gray-500 mb-1" id="account-email">user@email.com</p>
+                <div class="flex justify-center items-center gap-2 mb-3">
+                    <p class="text-xs text-gray-500" id="account-phone">017XXXXXXX</p>
+                    <button onclick="editPhoneNumber()" class="text-blue-600 text-xs bg-blue-50 px-2 py-1 rounded border border-blue-200 hover:bg-blue-100 transition"><i class="fas fa-edit"></i> Edit</button>
+                </div>
+                <div class="text-left bg-gradient-to-r from-blue-50 to-white p-4 rounded-xl border border-blue-100 mb-4 mt-4">
+                    <p class="text-sm text-gray-500 font-semibold mb-1">Wallet Balance</p>
+                    <h3 class="text-3xl font-bold text-gray-800 mb-3">Tk <span id="account-wallet-balance">0</span></h3>
+                    <button onclick="showPage('add-money-page', document.querySelector('nav button:nth-child(3)'))" class="w-full bg-blue-600 text-white py-2 rounded-lg font-semibold hover:bg-blue-700 transition">Add Money</button>
+                </div>
+                <button onclick="logoutUser()" class="w-full bg-red-50 text-red-600 py-2 rounded-lg font-semibold border border-red-200">Logout</button>
+            </div>
+        </main>
+
+        <main id="product-page" class="p-4 hide">
+            <div class="flex items-center gap-3 mb-4">
+                <button onclick="goBack()" class="text-gray-600"><i class="fas fa-arrow-left text-xl"></i></button>
+                <h2 class="text-lg font-bold text-gray-800" id="product-title">Select Product</h2>
+            </div>
+            <div class="bg-white rounded-xl shadow-sm p-4 mb-4">
+                <h3 class="font-bold text-gray-800 mb-3 flex items-center gap-2"><span class="bg-green-500 text-white w-5 h-5 rounded-full flex items-center justify-center text-xs">1</span> Select Recharge</h3>
+                <div class="grid grid-cols-2 gap-2" id="package-grid"></div>
+            </div>
+            <div class="bg-white rounded-xl shadow-sm p-4 mb-4">
+                <h3 class="font-bold text-gray-800 mb-3 flex items-center gap-2"><span class="bg-green-500 text-white w-5 h-5 rounded-full flex items-center justify-center text-xs">2</span> Account Info</h3>
+                <input type="text" id="player-id" placeholder="এখানে গেমের আইডি কোড দিন" class="w-full border border-gray-300 rounded-lg p-3 focus:outline-none focus:border-green-500">
+            </div>
+            <button class="w-full bg-green-500 text-white py-3 rounded-lg font-bold text-lg mb-4 hover:bg-green-600 transition shadow-lg" onclick="initiatePayment()">Buy Now</button>
+        </main>
+
+        <div id="payment-modal" class="fixed inset-0 bg-black bg-opacity-60 z-[150] hide flex items-end justify-center max-w-[480px] mx-auto">
+            <div class="bg-white w-full rounded-t-3xl overflow-hidden shadow-2xl">
+                <div id="payment-modal-header" class="p-4 text-white flex justify-between items-center bkash-theme">
+                    <h3 class="font-bold text-lg"><i class="fas fa-lock"></i> নিরাপদ পেমেন্ট</h3>
+                    <button onclick="closePaymentModal()"><i class="fas fa-times text-xl"></i></button>
+                </div>
+                <div class="p-5">
+                    <div class="text-center mb-4"><h2 class="text-3xl font-bold text-gray-800" id="payment-amount">৳ 0</h2></div>
+                    <div class="bg-gray-50 border border-gray-200 rounded-lg p-4 mb-4 text-sm">
+                        <p class="font-bold text-gray-800 mb-2">ট্রানজেকশন আইডি দিন</p>
+                        <input type="text" id="modal-trx-id" placeholder="TrxID (e.g. 9A7B6C5D)" class="w-full border p-2 rounded mb-3 focus:border-green-500 focus:outline-none">
+                        <div class="text-xs text-gray-600 space-y-1">
+                            <p>• <b>*247#</b> ডায়াল করে পেমেন্ট মেনুতে যান</p>
+                            <p>• <b>Send Money</b> -এ ক্লিক করুন</p>
+                            <p>• এই নম্বরে টাকা পাঠান: <b id="modal-payment-number" class="text-red-600">Loading...</b></p>
+                            <p>• টাকার পরিমাণ: <b id="modal-payment-amount-text" class="text-red-600">0</b></p>
+                        </div>
+                    </div>
+                    <button onclick="confirmPayment()" class="w-full bg-red-600 text-white py-3 rounded-lg font-bold hover:bg-red-700 transition">ভেরিফাই করুন</button>
+                </div>
+            </div>
+        </div>
+
+        <nav class="fixed bottom-0 w-full max-w-[480px] bg-white border-t border-gray-200 flex justify-around items-center py-2 z-40">
+            <button onclick="showPage('home-page', this)" class="flex flex-col items-center nav-active text-xs font-semibold"><i class="fas fa-home text-lg mb-1"></i> Home</button>
+            <button onclick="showPage('orders-page', this)" class="flex flex-col items-center nav-inactive text-xs font-semibold"><i class="fas fa-shopping-bag text-lg mb-1"></i> My Orders</button>
+            <button onclick="showPage('add-money-page', this)" class="flex flex-col items-center nav-inactive text-xs font-semibold">
+                <div class="bg-green-500 text-white w-10 h-10 rounded-full flex items-center justify-center -mt-6 shadow-lg border-4 border-white"><i class="fas fa-plus text-lg"></i></div>
+                <span class="mt-1">Add Money</span>
+            </button>
+            <button onclick="showPage('account-page', this)" class="flex flex-col items-center nav-inactive text-xs font-semibold"><i class="fas fa-user text-lg mb-1"></i> My Account</button>
+        </nav>
+    </div>
+</div>
+
+<script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+    import { getDatabase, ref, push, set, onValue, update, get } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
+    import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, GoogleAuthProvider, signInWithPopup, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
+
+    const firebaseConfig = {
+        apiKey: "AIzaSyCkV8QUItozNBYNnlHJ4GFNAhhEnZ6FqJ8",
+        authDomain: "rn-top-up-e248f.firebaseapp.com",
+        databaseURL: "https://rn-top-up-e248f-default-rtdb.firebaseio.com",
+        projectId: "rn-top-up-e248f",
+        storageBucket: "rn-top-up-e248f.firebasestorage.app",
+        messagingSenderId: "844967673226",
+        appId: "1:844967673226:web:fd04fbd9d4def03f929c73"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const db = getDatabase(app);
+    const auth = getAuth(app);
+    const googleProvider = new GoogleAuthProvider();
+
+    let currentUser = null;
+    let settings = {};
+    let categories = {};
+    let products = {};
+    let selectedPackage = { name: '', price: 0 };
+
+    // ================= MODERN TOAST SYSTEM =================
+    window.showToast = function(message, type = 'error') {
+        const container = document.getElementById('toast-container');
+        const toast = document.createElement('div');
+        const bgColor = type === 'success' ? 'bg-green-500' : (type === 'error' ? 'bg-red-500' : 'bg-blue-500');
+        const icon = type === 'success' ? 'fa-check-circle' : (type === 'error' ? 'fa-exclamation-circle' : 'fa-info-circle');
+        toast.className = `${bgColor} text-white p-4 rounded-xl shadow-2xl flex items-center gap-3 toast-anim pointer-events-auto`;
+        toast.innerHTML = `<i class="fas ${icon} text-xl"></i> <span class="text-sm font-semibold flex-1">${message}</span>`;
+        container.appendChild(toast);
+        setTimeout(() => {
+            toast.style.opacity = '0';
+            toast.style.transform = 'translateY(-20px)';
+            setTimeout(() => toast.remove(), 300);
+        }, 4000);
+    };
+
+    // ================= AUTHENTICATION LOGIC =================
+    document.addEventListener('DOMContentLoaded', () => {
+        document.getElementById('btn-show-register').addEventListener('click', () => {
+            document.getElementById('login-form-container').classList.add('hide');
+            document.getElementById('register-form-container').classList.remove('hide');
+        });
+
+        document.getElementById('btn-show-login').addEventListener('click', () => {
+            document.getElementById('register-form-container').classList.add('hide');
+            document.getElementById('login-form-container').classList.remove('hide');
+        });
+
+        document.getElementById('btn-login').addEventListener('click', () => {
+            const email = document.getElementById('login-email').value.trim();
+            const pass = document.getElementById('login-pass').value.trim();
+            if(!email || !pass) return window.showToast('ইমেইল এবং পাসওয়ার্ড দিন!', 'error');
+            
+            signInWithEmailAndPassword(auth, email, pass)
+                .then(() => window.showToast('সফলভাবে লগইন হয়েছে!', 'success'))
+                .catch((error) => window.showToast('লগইন ব্যর্থ: ' + error.message, 'error'));
+        });
+
+        document.getElementById('btn-google-login').addEventListener('click', () => {
+            signInWithPopup(auth, googleProvider)
+                .then((result) => {
+                    const user = result.user;
+                    get(ref(db, 'users/' + user.uid)).then((snapshot) => {
+                        if (!snapshot.exists()) {
+                            set(ref(db, 'users/' + user.uid), {
+                                name: user.displayName || "Google User",
+                                email: user.email,
+                                phone: "Update Needed",
+                                balance: 0
+                            });
+                        }
+                    });
+                    window.showToast('গুগল লগইন সফল!', 'success');
+                })
+                .catch((error) => window.showToast('গুগল লগইন ব্যর্থ! ইন্টারনেট বা ডোমেইন চেক করুন।', 'error'));
+        });
+
+        document.getElementById('btn-register').addEventListener('click', () => {
+            const name = document.getElementById('reg-name').value.trim();
+            const email = document.getElementById('reg-email').value.trim();
+            const phone = document.getElementById('reg-phone').value.trim();
+            const pass = document.getElementById('reg-pass').value.trim();
+            
+            if(!name || !email || !phone || !pass) return window.showToast('সব তথ্য পূরণ করুন!', 'error');
+            if(pass.length < 6) return window.showToast('পাসওয়ার্ড কমপক্ষে ৬ অক্ষরের হতে হবে!', 'error');
+            
+            createUserWithEmailAndPassword(auth, email, pass)
+                .then((userCredential) => {
+                    const user = userCredential.user;
+                    set(ref(db, 'users/' + user.uid), {
+                        name: name,
+                        email: email,
+                        phone: phone,
+                        balance: 0
+                    }).then(() => window.showToast('রেজিস্ট্রেশন সফল!', 'success'));
+                })
+                .catch((error) => window.showToast('রেজিস্ট্রেশন ব্যর্থ: ' + error.message, 'error'));
+        });
+
+        onAuthStateChanged(auth, (user) => {
+            if (user) {
+                currentUser = user;
+                document.getElementById('auth-screen').classList.add('hide');
+                document.getElementById('main-app').classList.remove('hide');
+                initUserData(user.uid);
+            } else {
+                currentUser = null;
+                document.getElementById('auth-screen').classList.remove('hide');
+                document.getElementById('main-app').classList.add('hide');
+            }
+        });
+    });
+
+    window.logoutUser = function() {
+        signOut(auth).then(() => location.reload());
+    };
+
+    function initUserData(uid) {
+        onValue(ref(db, 'settings'), (snapshot) => {
+            settings = snapshot.val() || {};
+            document.getElementById('telegram-link').href = settings.telegram || '#';
+            document.getElementById('whatsapp-link').href = settings.whatsapp || '#';
+            document.getElementById('deposit-number').innerText = settings.bkash || 'Loading...';
+        });
+
+        onValue(ref(db, 'users/' + uid), (snapshot) => {
+            if(snapshot.exists()) {
+                const userData = snapshot.val();
+                currentUser.name = userData.name;
+                currentUser.phone = userData.phone;
+                currentUser.balance = userData.balance;
+                
+                document.getElementById('header-avatar').innerText = (userData.name || 'U').charAt(0).toUpperCase();
+                document.getElementById('account-avatar').innerText = (userData.name || 'U').charAt(0).toUpperCase();
+                document.getElementById('account-name').innerText = userData.name || 'User';
+                document.getElementById('account-email').innerText = currentUser.email;
+                document.getElementById('account-phone').innerText = userData.phone || 'Not Set';
+                document.getElementById('header-balance').innerText = userData.balance || 0;
+                document.getElementById('account-wallet-balance').innerText = userData.balance || 0;
+            }
+        });
+
+        onValue(ref(db, 'categories'), (catSnapshot) => {
+            categories = catSnapshot.val() || {};
+            onValue(ref(db, 'products'), (prodSnapshot) => {
+                products = prodSnapshot.val() || {};
+                renderDynamicCategories();
+            });
+        });
+    }
+
+    window.editPhoneNumber = function() {
+        const currentPhone = (currentUser.phone === "Update Needed" || !currentUser.phone) ? "" : currentUser.phone;
+        const newPhone = prompt("Enter your phone number (e.g., 017XXXXXXXX):", currentPhone);
+        
+        if (newPhone && newPhone.trim() !== "") {
+            update(ref(db, 'users/' + currentUser.uid), { phone: newPhone.trim() })
+            .then(() => window.showToast('ফোন নাম্বার সফলভাবে আপডেট হয়েছে!', 'success'))
+            .catch(err => window.showToast('Error: ' + err.message, 'error'));
+        } else if (newPhone !== null) {
+            window.showToast("ফোন নাম্বার খালি রাখা যাবে না!", 'error');
+        }
+    };
+
+    function renderDynamicCategories() {
+        const container = document.getElementById('dynamic-products-container'); container.innerHTML = '';
+        let hasAny = false;
+        Object.values(categories).forEach(cat => {
+            const catProducts = Object.values(products).filter(p => p.category === cat.name);
+            if (catProducts.length > 0) {
+                hasAny = true;
+                let html = `<h2 class="text-center text-lg font-bold text-gray-700 mb-4 mt-6">${cat.name}</h2><div class="grid grid-cols-2 gap-3 mb-6">`;
+                catProducts.forEach(p => {
+                    html += `<div class="border rounded-xl overflow-hidden shadow-sm cursor-pointer hover:shadow-md transition bg-white" onclick="openProductPage('${p.category}', '${p.name}')"><div class="card-gradient p-3 text-center text-white h-32 flex flex-col justify-center items-center"><img src="${p.image}" class="w-12 h-12 mb-2 object-contain"><span class="font-bold text-sm text-center">${p.name}</span></div><div class="text-center py-2 text-xs font-bold text-gray-700">৳${p.price}</div></div>`;
+                });
+                html += `</div>`; container.innerHTML += html;
+            }
+        });
+        if(!hasAny) container.innerHTML = '<p class="text-center text-gray-500 mt-10">No products available yet.</p>';
+    }
+
+    window.renderMyOrders = function() {
+        if(!currentUser) return;
+        onValue(ref(db, 'orders'), (snapshot) => {
+            const orders = snapshot.val() || {};
+            const container = document.getElementById('my-orders-list'); container.innerHTML = '';
+            const myOrders = Object.values(orders).filter(o => o.userId === currentUser.uid);
+            
+            if (myOrders.length === 0) { container.innerHTML = '<p class="text-center text-gray-500 mt-10">No orders found.</p>'; return; }
+            
+            myOrders.reverse().forEach(o => {
+                let statusColor = o.status === 'Completed' ? 'green' : (o.status === 'Pending' ? 'yellow' : 'red');
+                container.innerHTML += `<div class="bg-white rounded-xl shadow-sm p-4 mb-4 border border-gray-100"><div class="flex justify-between items-center mb-3"><h3 class="font-bold text-gray-800">Order #${o.id || 'N/A'}</h3><span class="text-xs bg-${statusColor}-100 text-${statusColor}-700 px-2 py-1 rounded-full font-semibold">${o.status}</span></div><div class="flex justify-between text-sm mb-1"><span class="text-gray-500">Package</span> <span class="font-semibold">${o.productName}</span></div><div class="flex justify-between text-sm mb-1"><span class="text-gray-500">Total Price</span> <span class="font-semibold">৳${o.amount}</span></div><div class="flex justify-between text-sm"><span class="text-gray-500">Player ID</span> <span class="font-semibold">${o.playerId}</span></div></div>`;
+            });
+        }, { onlyOnce: true });
+    };
+
+    window.showPage = function(pageId, btnElement) {
+        document.querySelectorAll('main').forEach(page => page.classList.add('hide'));
+        document.getElementById(pageId).classList.remove('hide');
+        if(btnElement) {
+            document.querySelectorAll('nav button').forEach(btn => { btn.classList.remove('nav-active'); btn.classList.add('nav-inactive'); });
+            btnElement.classList.remove('nav-inactive'); btnElement.classList.add('nav-active');
+        }
+        if(pageId === 'orders-page') window.renderMyOrders();
+        if(pageId === 'product-page') document.querySelector('nav').classList.add('hide');
+        else document.querySelector('nav').classList.remove('hide');
+    };
+
+    window.openProductPage = function(category, name) {
+        document.getElementById('product-title').innerText = name;
+        window.showPage('product-page', null);
+        const grid = document.getElementById('package-grid'); grid.innerHTML = '';
+        Object.values(products).filter(p => p.category === category).forEach(p => {
+            grid.innerHTML += `<div class="border rounded-lg p-2 text-center cursor-pointer hover:border-green-500 hover:bg-green-50" onclick="window.selectPackage(this, '${p.name}', ${p.price})"><p class="font-bold text-sm text-gray-800">${p.name}</p><p class="text-xs text-green-600 font-semibold">৳${p.price}</p></div>`;
+        });
+    };
+
+    window.goBack = function() { window.showPage('home-page', document.querySelector('nav button:first-child')); };
+
+    window.selectPackage = function(element, name, price) {
+        document.querySelectorAll('#package-grid > div').forEach(div => { div.classList.remove('border-green-500', 'bg-green-50'); div.classList.add('border-gray-200'); });
+        element.classList.remove('border-gray-200'); element.classList.add('border-green-500', 'bg-green-50');
+        selectedPackage = { name, price };
+    };
+
+    window.initiatePayment = function() {
+        const playerId = document.getElementById('player-id').value;
+        if(!playerId) return window.showToast('অনুগ্রহ করে প্লেয়ার আইডি দিন!', 'error');
+        if(selectedPackage.name === '') return window.showToast('অনুগ্রহ করে একটি প্যাকেজ সিলেক্ট করুন!', 'error');
+        
+        document.getElementById('payment-amount').innerText = `৳ ${selectedPackage.price}`;
+        document.getElementById('modal-payment-amount-text').innerText = selectedPackage.price;
+        document.getElementById('modal-payment-number').innerText = settings.bkash || 'Loading...';
+        document.getElementById('modal-trx-id').value = '';
+        document.getElementById('payment-modal').classList.remove('hide');
+    };
+
+    window.closePaymentModal = function() { document.getElementById('payment-modal').classList.add('hide'); };
+
+    window.confirmPayment = function() {
+        const trxId = document.getElementById('modal-trx-id').value.trim();
+        if(!trxId) return window.showToast('অনুগ্রহ করে ট্রানজেকশন আইডি (TrxID) দিন!', 'error');
+        
+        push(ref(db, 'orders'), {
+            id: Math.floor(10000 + Math.random() * 90000),
+            userId: currentUser.uid,
+            userEmail: currentUser.email,
+            userPhone: currentUser.phone || "N/A",
+            playerId: document.getElementById('player-id').value,
+            productName: selectedPackage.name,
+            amount: selectedPackage.price,
+            status: 'Pending',
+            trxId: trxId,
+            date: new Date().toLocaleString()
+        }).then(() => {
+            window.showToast('অর্ডার সফল হয়েছে!', 'success');
+            document.getElementById('player-id').value = ''; 
+            window.closePaymentModal(); 
+            window.goBack(); 
+        });
+    };
+
+    window.submitDeposit = function() {
+        const amount = parseFloat(document.getElementById('add-amount-input').value);
+        const method = document.getElementById('payment-method').value;
+        const senderNumber = document.getElementById('sender-number').value;
+        const trxId = document.getElementById('trx-id').value;
+        
+        if(!amount || !senderNumber || !trxId) return window.showToast('অনুগ্রহ করে সব তথ্য সঠিকভাবে পূরণ করুন!', 'error');
+        
+        push(ref(db, 'deposits'), {
+            userId: currentUser.uid,
+            userEmail: currentUser.email,
+            userPhone: currentUser.phone || "N/A",
+            amount: amount,
+            method: method,
+            senderNumber: senderNumber,
+            trxId: trxId,
+            status: 'Pending',
+            date: new Date().toLocaleString()
+        }).then(() => {
+            window.showToast('ডিপোজিট রিকোয়েস্ট পাঠানো হয়েছে!', 'success');
+            document.getElementById('add-amount-input').value = ''; 
+            document.getElementById('sender-number').value = ''; 
+            document.getElementById('trx-id').value = '';
+            window.showPage('home-page', document.querySelector('nav button:first-child'));
+        });
+    };
+
+    document.getElementById('payment-method').addEventListener('change', function() {
+        if(this.value === 'bKash') document.getElementById('deposit-number').innerText = settings.bkash || 'Loading...';
+        else document.getElementById('deposit-number').innerText = settings.nagad || 'Loading...';
+    });
+
+</script>
+</body>
+</html>
